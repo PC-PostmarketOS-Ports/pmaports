@@ -1,0 +1,37 @@
+diff --git i/Makefile w/Makefile
+index 726a59a84..c159acc19 100644
+--- i/Makefile
++++ w/Makefile
+@@ -1573,13 +1573,13 @@ image_name:
+ 	@echo $(KBUILD_IMAGE)
+ 
+ # Clear a bunch of variables before executing the submake
+-tools/: FORCE
+-	$(Q)mkdir -p $(objtree)/tools
+-	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(tools_silent) $(filter --j% -j,$(MAKEFLAGS))" O=$(shell cd $(objtree) && /bin/pwd) subdir=tools -C $(src)/tools/
++#tools/: FORCE
++#	$(Q)mkdir -p $(objtree)/tools
++#	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(tools_silent) $(filter --j% -j,$(MAKEFLAGS))" O=$(shell cd $(objtree) && /bin/pwd) subdir=tools -C $(src)/tools/
+ 
+-tools/%: FORCE
+-	$(Q)mkdir -p $(objtree)/tools
+-	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(tools_silent) $(filter --j% -j,$(MAKEFLAGS))" O=$(shell cd $(objtree) && /bin/pwd) subdir=tools -C $(src)/tools/ $*
++#tools/%: FORCE
++#	$(Q)mkdir -p $(objtree)/tools
++#	$(Q)$(MAKE) LDFLAGS= MAKEFLAGS="$(tools_silent) $(filter --j% -j,$(MAKEFLAGS))" O=$(shell cd $(objtree) && /bin/pwd) subdir=tools -C $(src)/tools/ $*
+ 
+ # Single targets
+ # ---------------------------------------------------------------------------
+diff --git i/arch/arm64/Makefile w/arch/arm64/Makefile
+index 121c7a783..17584ce89 100644
+--- i/arch/arm64/Makefile
++++ w/arch/arm64/Makefile
+@@ -109,7 +109,7 @@ all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
+ MTK_PLATFORM := $(CONFIG_MTK_PLATFORM:"%"=%)
+ MTK_PROJECT := $(CONFIG_ARCH_MTK_PROJECT:"%"=%)
+ export MTK_PLATFORM MTK_PROJECT MTK_TARGET_PROJECT
+--include $(srctree)/scripts/drvgen/drvgen.mk
++#-include $(srctree)/scripts/drvgen/drvgen.mk
+ 
+ boot := arch/arm64/boot
+ 
