@@ -1,0 +1,58 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/(CHANGEME!)
+
+pkgname=linux-planet-cosmocom
+pkgver=4.4
+pkgrel=0
+pkgdesc="Planet Computers Cosmo Communicator kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="planet-cosmocom"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	flex
+	openssl-dev
+	perl
+"
+
+# Source
+_repository="android_kernel_planet_mt6771"
+_commit="44007a7f821c8bfc5eda6459b88ddbd0ed96a124"
+_config="config-$_flavor.$arch"
+source="
+    $pkgname_$_commit.tar.gz::https://github.com/PC-Custom-Android-Ports/$_repository/archive/$_commit.tar.gz
+    $_config
+    0002-Port-drvgen-scripts-to-Python3.patch
+    cust_mt6771_msdc.dtsi
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	. downstreamkernel_prepare
+	cp "$srcdir"/cust_mt6771_msdc.dtsi arch/arm64/boot/dts/mediatek/cust_mt6771_msdc.dtsi
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+}
+
+sha512sums="
+45bcd8086963b082441b173a6c311998013e13b255943991f9d3023b96e167a159301d23d0cd532fa50c4c4728983e4b9bf39fce8b0c9509097c0becb52a592b  44007a7f821c8bfc5eda6459b88ddbd0ed96a124.tar.gz
+372d3f2107055792fef8d43e13e7864e4ef56f351ebb4c72ec7ce6f3ec5bbb7f55bd8e8ce3664d30b92fad3d6fa82f7d507131759c03582b7bcc28c389d03109  config-planet-cosmocom.aarch64
+2846b51dcc0a7cb8cd876d299fa4ed028b40d2c6e31f2932e2a6479c2c2ff70790abd56d8da82067c59f5b185e3c059aec51d6cbab051e1ccc7bc9b98e8287cd  cust_mt6771_msdc.dtsi
+"
