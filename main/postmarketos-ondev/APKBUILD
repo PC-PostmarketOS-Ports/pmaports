@@ -25,7 +25,7 @@ depends="
 	haveged
 	haveged-openrc
 	i3wm
-	kirigami2
+	kirigami
 	losetup
 	mesa-egl
 	qt5-qtvirtualkeyboard
