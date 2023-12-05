@@ -32,6 +32,7 @@ subpackages="
 	$pkgname-nonfree-firmware:nonfree_firmware
 	$pkgname-pmtest
 "
+provider_priority=100
 
 build() {
 	devicepkg_build $startdir $pkgname

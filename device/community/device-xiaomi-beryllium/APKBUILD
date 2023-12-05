@@ -4,7 +4,7 @@
 pkgname=device-xiaomi-beryllium
 pkgdesc="Xiaomi Poco F1"
 pkgver=10
-pkgrel=2
+pkgrel=3
 url="https://postmarketos.org"
 license="MIT"
 arch="aarch64"
@@ -29,6 +29,7 @@ source="
 	modules-initfs.tianma
 	q6voiced.conf
 "
+provider_priority=100
 
 build() {
 	devicepkg_build $startdir $pkgname
