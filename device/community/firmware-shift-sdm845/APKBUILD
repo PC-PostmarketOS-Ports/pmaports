@@ -23,7 +23,6 @@ source="$pkgname.tar.gz::$url/-/archive/$_version/$pkgname-$_version.tar.gz
 	30-shift-sdm845-firmware-ci.files
 	board-2.bin::https://gitlab.com/dylanvanassche/ath10k-firmware/-/raw/$_board2_commit/linux-firmware/board-2.bin"
 subpackages="
-	$pkgname-initramfs:firmware_initramfs
 	$pkgname-pmtest
 	$pkgname-sensors:firmware_sensors
 "
@@ -39,6 +38,9 @@ package() {
 	# Install board-2.bin until upstream
 	install -Dm644 "$srcdir"/board-2.bin \
 		"$pkgdir"/lib/firmware/postmarketos/ath10k/WCN3990/hw1.0/board-2.bin
+
+	mv "$pkgdir"/lib/firmware/postmarketos \
+		"$pkgdir"/lib/firmware/postmarketos-shift
 }
 
 pmtest() {

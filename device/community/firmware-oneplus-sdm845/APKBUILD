@@ -33,6 +33,9 @@ package() {
 	# Install board-2.bin until upstream
 	install -Dm644 "$srcdir"/board-2.bin \
 		"$pkgdir"/lib/firmware/postmarketos/ath10k/WCN3990/hw1.0/board-2.bin
+
+	mv "$pkgdir"/lib/firmware/postmarketos \
+		"$pkgdir"/lib/firmware/postmarketos-oneplus
 }
 
 pmtest() {
