@@ -1,0 +1,159 @@
+From 6e2d7929e74b453cd3268a1028e5d4c0277db995 Mon Sep 17 00:00:00 2001
+From: Caleb Connolly <caleb.connolly@linaro.org>
+Date: Mon, 4 Dec 2023 18:51:39 +0000
+Subject: [PATCH 2/2] bootdeploy: support zboot kernel image
+
+As we move towards UEFI on more devices, we want to use systemd-boot and
+kernel images built with CONFIG_ZBOOT. However, these images aren't
+compatible with existing Android bootloaders. As a result, we must
+install both the old vmlinuz image for old bootloaders, and the fancy
+new self-extracting EFI image.
+
+When using systemd_boot, use linux.efi as the kernel file name instead
+of globbing on vmlinuz*.
+
+Signed-off-by: Caleb Connolly <caleb.connolly@linaro.org>
+---
+ cmd/mkinitfs/main.go              |  6 ++--
+ internal/bootdeploy/bootdeploy.go | 57 +++++++++++++++++--------------
+ 2 files changed, 35 insertions(+), 28 deletions(-)
+
+diff --git a/cmd/mkinitfs/main.go b/cmd/mkinitfs/main.go
+index da90ad4fc0a1..6474602bd946 100644
+--- a/cmd/mkinitfs/main.go
++++ b/cmd/mkinitfs/main.go
+@@ -154,7 +154,7 @@ func main() {
+ 
+ 	// Final processing of initramfs / kernel is done by boot-deploy
+ 	if !disableBootDeploy {
+-		if err := bootDeploy(workDir, *outDir, devinfo.UbootBoardname); err != nil {
++		if err := bootDeploy(workDir, *outDir, devinfo); err != nil {
+ 			log.Println(err)
+ 			log.Println("boot-deploy failed")
+ 			retCode = 1
+@@ -163,10 +163,10 @@ func main() {
+ 	}
+ }
+ 
+-func bootDeploy(workDir, outDir, ubootBoardname string) error {
++func bootDeploy(workDir string, outDir string, devinfo deviceinfo.DeviceInfo) error {
+ 	log.Print("== Using boot-deploy to finalize/install files ==")
+ 	defer misc.TimeFunc(time.Now(), "boot-deploy")
+ 
+-	bd := bootdeploy.New(workDir, outDir, ubootBoardname)
++	bd := bootdeploy.New(workDir, outDir, devinfo)
+ 	return bd.Run()
+ }
+diff --git a/internal/bootdeploy/bootdeploy.go b/internal/bootdeploy/bootdeploy.go
+index 7f445886879a..5389262988e4 100644
+--- a/internal/bootdeploy/bootdeploy.go
++++ b/internal/bootdeploy/bootdeploy.go
+@@ -10,32 +10,32 @@ import (
+ 	"path"
+ 	"path/filepath"
+ 	"strings"
++
++	"gitlab.com/postmarketOS/postmarketos-mkinitfs/pkgs/deviceinfo"
+ )
+ 
+ type BootDeploy struct {
+-	inDir          string
+-	outDir         string
+-	ubootBoardname string
++	inDir   string
++	outDir  string
++	devinfo deviceinfo.DeviceInfo
+ }
+ 
+ // New returns a new BootDeploy, which then runs:
+ //
+ //	boot-deploy -d indir -o outDir
+ //
+-// ubootBoardname is used for copying in some u-boot files prior to running
+-// boot-deploy. This is optional, passing an empty string is ok if this is not
+-// needed.
+-func New(inDir, outDir, ubootBoardname string) *BootDeploy {
++// devinfo is used to access some deviceinfo values, such as UbootBoardname
++// and GenerateSystemdBoot
++func New(inDir string, outDir string, devinfo deviceinfo.DeviceInfo) *BootDeploy {
+ 	return &BootDeploy{
+-		inDir:          inDir,
+-		outDir:         outDir,
+-		ubootBoardname: ubootBoardname,
++		inDir:   inDir,
++		outDir:  outDir,
++		devinfo: devinfo,
+ 	}
+ }
+ 
+ func (b *BootDeploy) Run() error {
+-
+-	if err := copyUbootFiles(b.inDir, b.ubootBoardname); errors.Is(err, os.ErrNotExist) {
++	if err := copyUbootFiles(b.inDir, b.devinfo.UbootBoardname); errors.Is(err, os.ErrNotExist) {
+ 		log.Println("u-boot files copying skipped: ", err)
+ 	} else {
+ 		if err != nil {
+@@ -43,16 +43,7 @@ func (b *BootDeploy) Run() error {
+ 		}
+ 	}
+ 
+-	return bootDeploy(b.inDir, b.outDir)
+-}
+-
+-func bootDeploy(workDir string, outDir string) error {
+-	// boot-deploy expects the kernel to be in the same dir as initramfs.
+-	// Assume that the kernel is in the output dir...
+-	kernels, _ := filepath.Glob(filepath.Join(outDir, "vmlinuz*"))
+-	if len(kernels) == 0 {
+-		return errors.New("Unable to find any kernels at " + filepath.Join(outDir, "vmlinuz*"))
+-	}
++	kernels, err := getKernelPath(b.outDir, b.devinfo.GenerateSystemdBoot == "true")
+ 
+ 	// Pick a kernel that does not have suffixes added by boot-deploy
+ 	var kernFile string
+@@ -71,7 +62,7 @@ func bootDeploy(workDir string, outDir string) error {
+ 	defer kernFd.Close()
+ 
+ 	kernFilename := path.Base(kernFile)
+-	kernFileCopy, err := os.Create(filepath.Join(workDir, kernFilename))
++	kernFileCopy, err := os.Create(filepath.Join(b.inDir, kernFilename))
+ 	if err != nil {
+ 		return err
+ 	}
+@@ -87,8 +78,8 @@ func bootDeploy(workDir string, outDir string) error {
+ 	cmd := exec.Command("boot-deploy",
+ 		"-i", "initramfs",
+ 		"-k", kernFilename,
+-		"-d", workDir,
+-		"-o", outDir,
++		"-d", b.inDir,
++		"-o", b.outDir,
+ 		"initramfs-extra")
+ 
+ 	cmd.Stdout = os.Stdout
+@@ -100,6 +91,22 @@ func bootDeploy(workDir string, outDir string) error {
+ 	return nil
+ }
+ 
++func getKernelPath(outDir string, zboot bool) ([]string, error) {
++	kernels := []string{}
++	kernFile := "vmlinuz*"
++
++	if zboot {
++		kernFile = "linux.efi"
++	}
++
++	kernels, _ = filepath.Glob(filepath.Join(outDir, kernFile))
++	if len(kernels) == 0 {
++		return nil, errors.New("Unable to find any kernels at " + filepath.Join(outDir, kernFile))
++	}
++
++	return kernels, nil
++}
++
+ // Copy copies the file at srcFile path to a new file at dstFile path
+ func copy(srcFile, dstFile string) error {
+ 	out, err := os.Create(dstFile)
+-- 
+2.42.1
+

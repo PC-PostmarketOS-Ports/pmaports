@@ -1,0 +1,27 @@
+From 4b0c103821d0b3284941de15e1c9a8b5662f918c Mon Sep 17 00:00:00 2001
+From: Caleb Connolly <caleb.connolly@linaro.org>
+Date: Mon, 4 Dec 2023 18:50:29 +0000
+Subject: [PATCH 1/2] deviceinfo: parse GenerateSystemdBoot option
+
+This will be used to adjust behaviour when using systemd boot
+
+Signed-off-by: Caleb Connolly <caleb.connolly@linaro.org>
+---
+ pkgs/deviceinfo/deviceinfo.go | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/pkgs/deviceinfo/deviceinfo.go b/pkgs/deviceinfo/deviceinfo.go
+index 7ea852f8c2f7..27007ffbaba5 100644
+--- a/pkgs/deviceinfo/deviceinfo.go
++++ b/pkgs/deviceinfo/deviceinfo.go
+@@ -20,6 +20,7 @@ type DeviceInfo struct {
+ 	InitfsExtraCompression string
+ 	MesaDriver             string
+ 	UbootBoardname         string
++	GenerateSystemdBoot    string
+ }
+ 
+ // Reads the relevant entries from "file" into DeviceInfo struct
+-- 
+2.42.1
+
