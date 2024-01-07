@@ -3,14 +3,16 @@
 pkgname=soc-qcom-sdm845
 pkgdesc="Common package for Qualcomm SDM845 devices"
 pkgver=17
-pkgrel=1
+pkgrel=2
 url="https://postmarketos.org"
 license="BSD-3-Clause"
 arch="aarch64"
 options="!check !archcheck !tracedeps"
+# We depend on unl0kr explicitly because we DO NOT support osk-sdl on SDM845 devices.
 depends="
 	swclock-offset
 	kmod
+	unl0kr
 "
 replaces="upower"
 subpackages="
