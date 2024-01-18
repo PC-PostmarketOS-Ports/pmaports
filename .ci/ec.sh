@@ -10,4 +10,4 @@ if [ "$(id -u)" = 0 ]; then
 fi
 
 set -x
-ec
+ec -exclude "temp/*"
