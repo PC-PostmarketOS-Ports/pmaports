@@ -2,7 +2,7 @@
 pkgname=device-generic-x86_64
 pkgdesc="Generic x86_64 system, with EFI"
 pkgver=11
-pkgrel=0
+pkgrel=1
 url="https://postmarketos.org"
 license="MIT"
 arch="x86_64"
@@ -67,6 +67,15 @@ kernel_lts() {
 
 nonfree_firmware() {
 	pkgdesc="Firmware for x86_64 devices"
+	# Depending on -any and having the linux-firmware base package in
+	# pmb_recommends allows for 1) installing all linux-firmware by default and
+	# 2) users can remove all of linux-firmware and install only fw they need
+	# if they want. We have to explicitly install the linux-firmware base
+	# package here or else the oem-* packages that install fw will satisfy the
+	# -any dependency and *only* that fw will be installed... which is not what
+	# we want.
+	depends="linux-firmware-any"
+	_pmb_recommends="linux-firmware"
 
 	mkdir -p "$subpkgdir"
 }
